@@ -1,0 +1,32 @@
+[
+    {
+        "id": 1,
+        "tipo": "menor",
+        "ut": 50,
+        "detalle": "VIVIENDA UNIFAMILIAR HASTA 60M2",
+        "valor": 61
+    },
+    {
+        "id": 2,
+        "tipo": "entre",
+        "min": 61,
+        "max": 150,
+        "ut": 100,
+        "detalle": "UNIF Y LOCALES COMERC HASTA 120M2 - GALPONES"
+    },
+    {
+        "id": 3,
+        "tipo": "entre",
+        "min": 151,
+        "max": 350,
+        "ut": 150,
+        "detalle": "MULT HASTA 3 PLANTAS S\/ ASC - EST. DE SERVICIO - COCHERAS - COLEGIOS - CLUBES - LOCALES COMERC HASTA 300M2"
+    },
+    {
+        "id": 4,
+        "tipo": "mayor",
+        "ut": 250,
+        "detalle": "MAS DE 9 PLANTAS - BANCOS - CINES - SALUD - HOTEL",
+        "valor": 350
+    }
+]
