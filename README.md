@@ -81,4 +81,4 @@ Luego, abrí en tu navegador:
 
 ## 🤝 Créditos
 
-Desarrollado por [Leandro Villalba](https://github.com/VillalbaLeandro)
+Desarrollado por [Leandro Villalba](https://github.com/VillalbaLeandro) e Ignacio [Apellido]
