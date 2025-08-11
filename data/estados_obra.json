@@ -1,42 +1,42 @@
 [
-  {
-    "id": 1,
-    "descripcion": "Obra nueva",
-    "porcentaje": 0.5
-  },
-  {
-    "id": 2,
-    "descripcion": "Acorde al código - exist. sin permiso en construcción",
-    "porcentaje": 1
-  },
-  {
-    "id": 3,
-    "descripcion": "Acorde al código - exist. sin permiso concluido",
-    "porcentaje": 2
-  },
-  {
-    "id": 4,
-    "descripcion": "Antirreg - concluida detectada",
-    "porcentaje": 6
-  },
-  {
-    "id": 5,
-    "descripcion": "Antirreg - pv de obra concluida",
-    "porcentaje": 5
-  },
-  {
-    "id": 6,
-    "descripcion": "Cuerpo cerrado sobre línea municipal",
-    "porcentaje": 9
-  },
-  {
-    "id": 7,
-    "descripcion": "Balcones",
-    "porcentaje": 6
-  },
-  {
-    "id": 8,
-    "descripcion": "Marquesinas y/o aleros",
-    "porcentaje": 4
-  }
+    {
+        "id": 1,
+        "descripcion": "Obra nueva",
+        "porcentaje": 0.5
+    },
+    {
+        "id": 2,
+        "descripcion": "Acorde al código - exist. sin permiso en construcción",
+        "porcentaje": 1
+    },
+    {
+        "id": 3,
+        "descripcion": "Acorde al código - exist. sin permiso concluido",
+        "porcentaje": 2
+    },
+    {
+        "id": 4,
+        "descripcion": "Antirreg - concluida detectada",
+        "porcentaje": 6
+    },
+    {
+        "id": 5,
+        "descripcion": "Antirreg - pv de obra concluida",
+        "porcentaje": 5
+    },
+    {
+        "id": 6,
+        "descripcion": "Cuerpo cerrado sobre línea municipal",
+        "porcentaje": 9
+    },
+    {
+        "id": 7,
+        "descripcion": "Balcones",
+        "porcentaje": 6
+    },
+    {
+        "id": 8,
+        "descripcion": "Marquesinas y\/o aleros",
+        "porcentaje": 4
+    }
 ]

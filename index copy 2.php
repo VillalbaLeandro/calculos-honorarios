@@ -3,7 +3,6 @@ require_once __DIR__ . '/includes/categorias.php';
 require_once __DIR__ . '/includes/estados.php';
 require_once __DIR__ . '/includes/ut.php';
 
-// Cargar datos desde los archivos JSON
 $categorias = get_categorias();
 $estados = get_estados();
 $ut_json = get_ut();
@@ -25,8 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (empty($estado_id)) {
             $error = "Debe seleccionar un estado de obra.";
         } else {
-            // **CORRECCIÓN:** Se llama a la nueva función `detectar_categoria_por_m2` en lugar de la antigua.
-            $cat = detectar_categoria_por_m2(floatval($m2), $categorias);
+            $cat = detectar_categoria(floatval($m2), $categorias);
             if (!$cat) {
                 $error = "No hay una categoría configurada para los m² ingresados.";
             }
@@ -49,44 +47,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
-
-    // Si no hay errores, se procede con los cálculos
-    if (!$error && isset($cat) && isset($estado_id) && !empty($estado_id)) {
-        // Buscar el estado de obra por ID
-        $estado = null;
-        foreach ($estados as $e) {
-            if ($e['id'] == $estado_id) {
-                $estado = $e;
-                break;
-            }
+    // Estado de obra
+    $estado = null;
+    foreach ($estados as $e) {
+        if ($e['id'] == $estado_id) {
+            $estado = $e;
+            break;
         }
+    }
+    if (!$error && $cat && $estado) {
+        $valor_m2 = floatval($cat['valor_m2']);      // <— nuevo nombre en JSON
+        $porc     = floatval($estado['porcentaje']);       // viene como % (0.5 => 0,5%)
+        // Fórmula pedida:
+        // Total = valor_m2 × (valor_m2 × valor_ut) × (porcentaje / 100)
+        $base_m2_ut = $valor_m2 * $valor_ut;           // p.ej. 50 * 1100 = 55.000
+        $factor     = $valor_m2 * $base_m2_ut;         // 50 * 55.000 = 2.750.000
+        $total      = $factor * ($porc / 100);         // 2.750.000 * 0,005 = 13.750
 
-        if ($estado) {
-            $valor_m2 = floatval($cat['valor_m2']);
-            $porc     = floatval($estado['porcentaje']);
-
-            // Fórmula original, no modificada
-            // Total = valor_m2 × (valor_m2 × valor_ut) × (porcentaje / 100)
-            $base_m2_ut = $valor_m2 * $valor_ut;
-            $factor     = $valor_m2 * $base_m2_ut;
-            $total      = $factor * ($porc / 100);
-
-            $resultado = [
-                'cat'           => $cat,
-                'estado'        => $estado,
-                'valor_m2'      => $valor_m2,
-                'valor_ut'      => $valor_ut,
-                'anio_valor_ut' => $anio_valor_ut,
-                'porc'          => $porc,
-                'base_m2_ut'    => $base_m2_ut,
-                'factor'        => $factor,
-                'total'         => $total,
-                'modo'          => $modo,
-                'm2'            => $m2
-            ];
-        } else {
-            $error = "Estado de obra no encontrado.";
-        }
+        $resultado = [
+            'cat'           => $cat,
+            'estado'        => $estado,
+            'valor_m2'      => $valor_m2,
+            'valor_ut'      => $valor_ut,
+            'anio_valor_ut' => $anio_valor_ut,
+            'porc'          => $porc,
+            'base_m2_ut'    => $base_m2_ut,
+            'factor'        => $factor,
+            'total'         => $total,
+            'modo'          => $modo,
+            'm2'            => $m2
+        ];
     }
 }
 ?>
@@ -153,16 +143,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <strong>Valor de la UT correspondiente al año (<?= $anio_valor_ut ?>): <?= $valor_ut ?></strong>
                         </div>
                         <form method="post" autocomplete="off" class="mb-3" id="calc-form">
-                            <!-- <div class="mb-3">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="modo" id="modo-m2" value="m2" onchange="toggleModo()" <?= $modo == 'm2' ? 'checked' : '' ?>>
-                                    <label class="form-check-label" for="modo-m2">Calcular por m²</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="modo" id="modo-cat" value="cat" onchange="toggleModo()" <?= $modo == 'cat' ? 'checked' : '' ?>>
-                                    <label class="form-check-label" for="modo-cat">Seleccionar categoría</label>
-                                </div>
-                            </div> -->
+                            <div class="mb-3">
+                                <div>
+                                    </div>
+                            </div>
                             <div id="grupo-m2" class="mb-3" style="<?= $modo == 'cat' ? 'display:none' : '' ?>">
                                 <label for="m2" class="form-label">Metros cuadrados (m²):</label>
                                 <input type="number" step="0.01" min="0" class="form-control" id="m2" name="m2" value="<?= htmlspecialchars($m2) ?>">
@@ -170,10 +154,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div id="grupo-cat" class="mb-3" style="<?= $modo == 'cat' ? '' : 'display:none' ?>">
                                 <label for="categoria_id" class="form-label">Categoría:</label>
                                 <select name="categoria_id" id="categoria_id" class="form-select">
-                                    <option value="">Seleccione categoría...</option>
+                                    <<option value="">Seleccione categoría...</option>
                                     <?php foreach ($categorias as $cat) : ?>
                                         <option value="<?= $cat['id'] ?>" <?= ($cat['id'] == $categoria_id ? 'selected' : '') ?>>
-                                            <?= descripcion_categoria_por_rango($cat) ?> (<?= $cat['valor_m2'] ?> valor m²)
+                                            <?= descripcion_categoria($cat) ?> (<?= $cat['valor_m2'] ?> valor m²)
                                             <?php if (!empty($cat['detalle'])) : ?> - <?= htmlspecialchars($cat['detalle']) ?> <?php endif; ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -207,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php if ($error) : ?>
                             <div class="alert alert-danger borde-verde"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
-
+                        
                         <?php if ($resultado) : ?>
                             <div id="bloque-resultado" class="mt-4 p-4 rounded-3" style="background-color: #f8f9fa;">
 
@@ -223,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="row text-center">
                                             <div class="col-md-4">
                                                 <small class="text-muted d-block">Categoría</small>
-                                                <span class="badge bg-success fs-6"><?= descripcion_categoria_por_rango($resultado['cat']) ?></span>
+                                                <span class="badge bg-success fs-6"><?= descripcion_categoria($resultado['cat']) ?></span>
                                             </div>
                                             <?php if ($resultado['modo'] == 'm2') : ?>
                                                 <div class="col-md-4">
@@ -278,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
 
                                 <p class="small text-muted text-center mt-3">
-                                    <i class="bi bi-info-circle me-1"></i>El presente cálculo es estimativo, no incluye costos menores referidos a los Tributos 231 (Inspecciones y demoliciones) y Tributo 233 (Derechos de Oficina).
+                                    <i class="bi bi-info-circle me-1"></i> El presente cálculo es estimativo; no incluye costos menores referidos a los Tributos 231 y 233.
                                 </p>
 
                             </div>
@@ -288,16 +272,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <footer class="mt-4 text-center text-muted">
                     <small>&copy; <?= date('Y') ?> - Municipalidad de Posadas | Cálculo orientativo. Verifique la normativa vigente.</small>
-                    <div class="mt-2">
-                        <button type="button" class="btn btn-sm btn-outline-success" onclick="goToAdmin()">
-                            <i class="bi bi-pencil-square"></i> Administrar
-                        </button>
-                    </div>
-                </footer>
+                    </footer>
             </div>
         </div>
     </div>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -311,43 +290,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             window.location = window.location.pathname;
         }
         document.addEventListener("DOMContentLoaded", function() {
-            toggleModo();
+            // No es estrictamente necesario si el modo por defecto (m2) es el único activo
+            // pero es buena práctica dejarlo si se reactiva el toggle.
+             toggleModo();
         });
-
-        async function goToAdmin() {
-            const password = prompt("Ingrese la contraseña para acceder al panel de administración:", "");
-            if (password === null) return;
-
-            try {
-                const resp = await fetch(`${location.origin}/check_password.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'same-origin', // asegura envío/recepción de cookies en mismo origen
-                    body: JSON.stringify({
-                        password
-                    })
-                });
-
-                // Si el server devolvió HTML/404/etc., lo verás claro
-                if (!resp.ok) {
-                    const text = await resp.text();
-                    throw new Error(`HTTP ${resp.status} - ${text.slice(0,200)}`);
-                }
-
-                const result = await resp.json(); // debe ser JSON válido
-                if (result && result.success) {
-                    // redirección absoluta al mismo host
-                    window.location.href = `${location.origin}/admin.php`;
-                } else {
-                    alert(result?.message || 'Acceso denegado. Contraseña incorrecta.');
-                }
-            } catch (err) {
-                console.error('Error al verificar la contraseña:', err);
-                alert('Ocurrió un error inesperado verificando la contraseña.');
-            }
-        }
     </script>
 </body>
 
