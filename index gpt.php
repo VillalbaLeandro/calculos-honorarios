@@ -22,19 +22,20 @@ $valor_ut   = $ut_json['valor_ut'];
 $anio_valor_ut = $ut_json['anio_valor_ut'];
 
 // --- Entrada del formulario ---
+// Estructura esperada:
 // $_POST['sections'] = [
 //   ['titulo' => 'Sección 1', 'm2' => '60', 'estado_id' => '1'],
 //   ['titulo' => 'Balcones',  'm2' => '30', 'estado_id' => '3'],
 // ]
 $sections_post = $_POST['sections'] ?? [];
 
-// Normalizar
+// Para mantener valores tras submit fallido, normalizamos a array de arrays
 $sections_input = [];
 if (is_array($sections_post)) {
     foreach ($sections_post as $sec) {
         if (!is_array($sec)) continue;
         $sections_input[] = [
-            'titulo'    => trim($sec['titulo'] ?? ''), // queda por compat., aunque el input esté oculto
+            'titulo'    => trim($sec['titulo'] ?? ''),
             'm2'        => $sec['m2'] ?? '',
             'estado_id' => $sec['estado_id'] ?? '',
         ];
@@ -48,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && empty($sections_input)) {
 
 $errores_generales = [];
 $errores_por_seccion = []; // idx => mensaje
-$resultado_general = null; // ['secciones' => [...], 'total_general' => number]
+$resultado_general = null; // se llena con ['secciones' => [...], 'total_general' => number]
 
 // --- Procesamiento ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -87,12 +88,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Cálculo por sección (fórmula corregida)
+            // base_m2_ut = valor_m2_categoria × UT
+            // factor     = m² sección × base_m2_ut
+            // total_sec  = factor × (porcentaje_estado / 100)
             $valor_m2 = floatval($cat['valor_m2']);
             $porc     = floatval($estado['porcentaje']);
 
-            $base_m2_ut = $valor_m2 * $valor_ut;      // monto unitario
-            $factor     = $m2 * $base_m2_ut;          // subtotal
-            $total_sec  = $factor * ($porc / 100);    // total sección
+            $base_m2_ut = $valor_m2 * $valor_ut;
+            $factor     = $m2 * $base_m2_ut;
+            $total_sec  = $factor * ($porc / 100);
 
             $total_general += $total_sec;
 
@@ -171,192 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-left: 4px solid #51b96a22;
         }
 
-        /* Botón eliminar más integrado (mantengo la clase para no tocar la lógica JS) */
-        .btn-outline-danger {
-            border-color: transparent;
-            color: #94a39b;
-        }
-
         .btn-outline-danger:hover {
-            color: #dc3545 !important;
-            background: #f0f6f2;
-            border-color: #e8efe9;
-        }
-
-        .btn-icon {
-            width: 2rem;
-            height: 2rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-        }
-
-        /* Animación de realce del bloque de resultados */
-        @keyframes highlight-result {
-            from {
-                background-color: #e9f5ec;
-                transform: scale(1.01);
-            }
-
-            to {
-                background-color: #f8f9fa;
-                transform: scale(1);
-            }
-        }
-
-        .result-updated {
-            animation: highlight-result 1.2s ease-out;
-        }
-
-        .subtotal-strip {
-            background: linear-gradient(180deg, #f1fff4 0%, #f8f9fa 100%);
-            border: 1px solid #51b96a22;
-            border-radius: 12px;
-            /* box-shadow: 0 2px 8px #51b96a1a; */
-        }
-
-        .subtotal-amount {
-            letter-spacing: .2px;
-        }
-
-        .meta-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .5rem .6rem;
-            /* espacio entre chips */
-        }
-
-        .meta-pill {
-            display: flex;
-            align-items: center;
-            gap: .35rem;
-            padding: .35rem .75rem;
-            border: 1px dashed #51b96a33;
-            border-radius: 999px;
-            background: #fff;
-            flex: 0 1 auto;
-            /* permite que se achique y haga wrap */
-            max-width: 100%;
-        }
-
-        .meta-pill small {
-            color: #6c757d;
-        }
-
-        .meta-pill .value {
-            font-weight: 600;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            /* solo el valor trunca con … */
-            max-width: 18ch;
-            /* ajustá a gusto; evita pills XXL */
-        }
-
-        /* En pantallas muy chicas, permití 2 líneas en el valor */
-        @media (max-width: 400px) {
-            .meta-pill .value {
-                white-space: normal;
-                max-width: 100%;
-            }
-        }
-
-        /* --- Separador estético entre secciones --- */
-        .seccion-divider {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            color: #7da78b;
-            margin: .35rem 0 -.35rem;
-            user-select: none;
-        }
-
-        .seccion-divider::before,
-        .seccion-divider::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: repeating-linear-gradient(90deg, #51b96a33 0 8px, transparent 8px 16px);
-        }
-
-        .seccion-divider .badge {
-            background: #aae7bc;
-            border: 1px dashed #51b96a55;
-            font-weight: 500;
-        }
-
-        /* --- Estilos específicos del PDF --- */
-        #pdf-template * {
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
-        }
-
-        #pdf-template .pdf-header {
-            border-bottom: 2px solid #51b96a;
-            margin-bottom: 12px;
-            padding-bottom: 6px;
-        }
-
-        #pdf-template .pdf-title {
-            font-size: 20px;
-            margin: 0;
-        }
-
-        #pdf-template .pdf-subtitle {
-            color: #198754;
-            margin: 2px 0 0 0;
-            font-size: 12px;
-        }
-
-        #pdf-template .pdf-meta {
-            font-size: 11px;
-            color: #6c757d;
-            margin-bottom: 12px;
-        }
-
-        #pdf-template .pdf-total {
-            font-size: 22px;
-            color: #198754;
-            font-weight: 700;
-            margin: 8px 0 10px 0;
-        }
-
-        #pdf-template table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-        }
-
-        #pdf-template th,
-        #pdf-template td {
-            border: 1px solid #e3efe7;
-            padding: 6px 8px;
-            vertical-align: top;
-        }
-
-        #pdf-template th {
-            background: #f4fbf6;
-            text-align: left;
-        }
-
-        #pdf-template .seccion-bloque {
-            border: 1px solid #e6f2ea;
-            border-radius: 6px;
-            padding: 8px;
-            margin-bottom: 8px;
-        }
-
-        #pdf-template .firma {
-            margin-top: 16px;
-            font-size: 10px;
-            color: #6c757d;
-            border-top: 1px dashed #cfe7d7;
-            padding-top: 8px;
-        }
-
-        .html2pdf__page-break {
-            height: 0;
-            break-after: page;
+            color: #fff !important;
         }
     </style>
 </head>
@@ -382,31 +202,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
 
                         <form method="post" autocomplete="off" class="mb-3" id="calc-form">
+
                             <div id="secciones-container" class="d-grid gap-3">
                                 <?php foreach ($sections_input as $i => $sec): ?>
-                                    <?php if ($i > 0): ?>
-                                        <!-- Separador visual entre secciones -->
-                                        <div class="seccion-divider" aria-hidden="true">
-                                            <span class="badge rounded-pill">
-                                                <i class="bi bi-node-plus me-1"></i> Nueva sección
-                                            </span>
-                                        </div>
-                                    <?php endif; ?>
-
                                     <div class="card seccion-card border-0" data-index="<?= $i ?>">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <h6 class="mb-0">
                                                     <i class="bi bi-layers-fill text-success me-2"></i>
-                                                    Sección <?= $i + 1 ?>
+                                                    <?= htmlspecialchars($sec['titulo'] !== '' ? $sec['titulo'] : 'Sección ' . ($i + 1)) ?>
                                                 </h6>
-                                                <button type="button"
-                                                    class="btn btn-sm btn-outline-danger btn-icon"
-                                                    onclick="eliminarSeccion(this)"
-                                                    aria-label="Eliminar sección"
-                                                    data-bs-toggle="tooltip"
-                                                    data-bs-title="Eliminar sección">
-                                                    <i class="bi bi-trash3"></i>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarSeccion(this)">
+                                                    <i class="bi bi-x-circle"></i> Eliminar
                                                 </button>
                                             </div>
 
@@ -417,13 +224,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 </div>
                                             <?php endif; ?>
 
-                                            <!-- Campos apilados: m² y Estado uno debajo del otro -->
-                                            <div class="row g-2">
-                                                <div class="col-12">
+                                            <div class="row g-3 align-items-end">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Nombre de la sección (opcional)</label>
+                                                    <input type="text" class="form-control" name="sections[<?= $i ?>][titulo]" value="<?= htmlspecialchars($sec['titulo']) ?>" placeholder="Ej.: Obra nueva, Balcones, etc.">
+                                                </div>
+                                                <div class="col-md-4">
                                                     <label class="form-label">Metros cuadrados (m²)</label>
                                                     <input type="number" step="0.01" min="0" class="form-control" name="sections[<?= $i ?>][m2]" value="<?= htmlspecialchars($sec['m2']) ?>" required>
                                                 </div>
-                                                <div class="col-12">
+                                                <div class="col-md-4">
                                                     <label class="form-label">Estado de la obra</label>
                                                     <select class="form-select" name="sections[<?= $i ?>][estado_id]" required>
                                                         <option value="">Seleccione...</option>
@@ -439,7 +249,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <?php
                                             // Feedback de categoría detectada si hay datos válidos (post)
                                             $cat_feedback = null;
-                                            if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_numeric($sec['m2']) && floatval($sec['m2']) > 0) {
+                                            if (
+                                                $_SERVER['REQUEST_METHOD'] === 'POST'
+                                                && is_numeric($sec['m2']) && floatval($sec['m2']) > 0
+                                            ) {
                                                 $cat_tmp = detectar_categoria_por_m2(floatval($sec['m2']), $categorias);
                                                 if ($cat_tmp) {
                                                     $cat_feedback = 'Categoría detectada: ' . descripcion_categoria_por_rango($cat_tmp)
@@ -459,77 +272,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <button type="button" class="btn btn-outline-success" onclick="agregarSeccion()">
                                     <i class="bi bi-plus-circle"></i> Agregar sección
                                 </button>
-                                <button type="submit" class="btn bg-verde">
-                                    <i class="bi bi-calculator" aria-hidden="true"></i>
+                                <button type="submit" class="btn bg-verde px-4">
                                     Calcular total
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary" onclick="limpiarFormulario()">
-                                    <i class="bi bi-eraser" aria-hidden="true"></i>
                                     Limpiar
                                 </button>
-
                             </div>
                         </form>
 
                         <?php if ($resultado_general): ?>
                             <div id="bloque-resultado" class="mt-4 p-4 rounded-3" style="background-color: #f8f9fa;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="text-center flex-grow-1">
-                                        <h3 class="text-muted fw-light mb-1">Total General</h3>
-                                        <p class="display-5 fw-bold text-success mb-0">
-                                            $<?= number_format($resultado_general['total_general'], 2, ',', '.') ?>
-                                        </p>
-                                        <span class="text-muted small">Suma de todas las secciones</span>
-                                    </div>
-                                    <!-- <div class="ms-3">
-                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="descargarPDF()">
-                                            <i class="bi bi-filetype-pdf"></i> Descargar PDF
-                                        </button>
-                                    </div> -->
+                                <div class="text-center mb-4">
+                                    <h3 class="text-muted fw-light">Total General</h3>
+                                    <p class="display-5 fw-bold text-success mb-0">
+                                        $<?= number_format($resultado_general['total_general'], 2, ',', '.') ?>
+                                    </p>
+                                    <span class="text-muted small">Suma de todas las secciones</span>
                                 </div>
 
                                 <?php foreach ($resultado_general['secciones'] as $idx => $res): ?>
                                     <div class="card shadow-sm border-0 mb-3">
                                         <div class="card-body">
-                                            <div class="meta-pills mb-2">
-                                                <div class="meta-pill">
-                                                    <i class="bi bi-layers"></i>
-                                                    <small>Sección</small>
-                                                    <span class="value">#<?= $idx + 1 ?></span>
+                                            <div class="row text-center">
+                                                <div class="col-md-3">
+                                                    <small class="text-muted d-block">Sección</small>
+                                                    <strong class="fs-6">
+                                                        <?= htmlspecialchars($res['titulo'] !== '' ? $res['titulo'] : 'Sección ' . ($idx + 1)) ?>
+                                                    </strong>
                                                 </div>
-
-                                                <div class="meta-pill">
-                                                    <i class="bi bi-rulers"></i>
-                                                    <small>Superficie</small>
-                                                    <span class="value"><?= htmlspecialchars($res['m2']) ?> m²</span>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted d-block">Superficie</small>
+                                                    <strong class="fs-6"><?= htmlspecialchars($res['m2']) ?> m²</strong>
                                                 </div>
-
-                                                <div class="meta-pill">
-                                                    <i class="bi bi-grid-3x3-gap"></i>
-                                                    <small>Categoría</small>
-                                                    <span class="value"><?= descripcion_categoria_por_rango($res['cat']) ?></span>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted d-block">Categoría</small>
+                                                    <span class="badge bg-success fs-6"><?= descripcion_categoria_por_rango($res['cat']) ?></span>
                                                 </div>
-
-                                                <div class="meta-pill">
-                                                    <i class="bi bi-building-check"></i>
-                                                    <small>Estado</small>
-                                                    <span class="value"><?= htmlspecialchars($res['estado']['descripcion']) ?></span>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted d-block">Estado de Obra</small>
+                                                    <strong class="fs-6"><?= htmlspecialchars($res['estado']['descripcion']) ?></strong>
                                                 </div>
                                             </div>
-
-                                            <!-- Subtotal -->
-                                            <div class="subtotal-strip d-flex justify-content-between align-items-center px-3 py-2">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <!-- <i class="bi bi-cash-coin fs-5 text-success"></i> -->
-                                                    <span class="text-muted">Subtotal de la sección</span>
+                                            <hr>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="text-muted">
+                                                    Subtotal de la sección
                                                 </div>
-                                                <div class="subtotal-amount fs-5 fw-bold text-success">
+                                                <div class="fs-5 fw-bold text-success">
                                                     $<?= number_format($res['total'], 2, ',', '.') ?>
                                                 </div>
                                             </div>
 
-
-                                            <!-- Detalle -->
                                             <div class="accordion mt-3" id="accordionDetalle_<?= $idx ?>">
                                                 <div class="accordion-item border-0">
                                                     <h2 class="accordion-header" id="heading_<?= $idx ?>">
@@ -558,7 +352,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                                     <strong class="text-end">$<?= number_format($res['base_m2_ut'], 2, ',', '.') ?></strong>
                                                                 </li>
                                                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    <span><i class="bi bi-calculator text-muted me-2"></i>Subtotal (monto × superficie ingresada)</span>
+                                                                    <span><i class="bi bi-calculator text-muted me-2"></i>Subtotal (monto × superficie)</span>
                                                                     <strong class="text-end">$<?= number_format($res['factor'], 2, ',', '.') ?></strong>
                                                                 </li>
                                                                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -570,8 +364,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
 
@@ -607,80 +401,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endforeach; ?>
     </div>
 
-    <?php if ($resultado_general): ?>
-        <!-- Plantilla oculta para PDF (se clona al exportar) -->
-        <div id="pdf-template" class="d-none">
-            <div class="pdf-header">
-                <h1 class="pdf-title">Calculadora de Derechos Municipales</h1>
-                <div class="pdf-subtitle">Municipalidad de Posadas</div>
-            </div>
-            <div class="pdf-meta">
-                Emitido: <?= date('d/m/Y H:i') ?> &nbsp;|&nbsp; UT (<?= htmlspecialchars($anio_valor_ut) ?>): <?= number_format($valor_ut, 2, ',', '.') ?>
-            </div>
-
-            <div class="pdf-total">Total general: $<?= number_format($resultado_general['total_general'], 2, ',', '.') ?></div>
-
-            <h3 style="font-size:14px;margin:10px 0 6px;">Resumen por sección</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Superficie</th>
-                        <th>Categoría</th>
-                        <th>Estado</th>
-                        <th style="text-align:right;">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($resultado_general['secciones'] as $idx => $res): ?>
-                        <tr>
-                            <td><?= $idx + 1 ?></td>
-                            <td><?= htmlspecialchars($res['m2']) ?> m²</td>
-                            <td><?= descripcion_categoria_por_rango($res['cat']) ?></td>
-                            <td><?= htmlspecialchars($res['estado']['descripcion']) ?></td>
-                            <td style="text-align:right;">$<?= number_format($res['total'], 2, ',', '.') ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-
-            <h3 style="font-size:14px;margin:12px 0 6px;">Detalle de cálculos</h3>
-            <?php foreach ($resultado_general['secciones'] as $idx => $res): ?>
-                <div class="seccion-bloque">
-                    <strong>Sección #<?= $idx + 1 ?></strong><br>
-                    <small>Superficie: <?= htmlspecialchars($res['m2']) ?> m² — Categoría: <?= descripcion_categoria_por_rango($res['cat']) ?> — Estado: <?= htmlspecialchars($res['estado']['descripcion']) ?></small>
-                    <ul style="margin:6px 0 0 16px;padding:0;">
-                        <li>Valor m² de la categoría: <?= number_format($res['valor_m2'], 2, ',', '.') ?></li>
-                        <li>UT vigente (<?= $res['anio_valor_ut'] ?>): <?= number_format($res['valor_ut'], 2, ',', '.') ?></li>
-                        <li>Monto (valor m² × UT): $<?= number_format($res['base_m2_ut'], 2, ',', '.') ?></li>
-                        <li>Subtotal (monto × superficie): $<?= number_format($res['factor'], 2, ',', '.') ?></li>
-                        <li>Aplicación por estado (<?= rtrim(rtrim(number_format($res['porc'], 2, ',', '.'), '0'), ',') ?>%): <strong>$<?= number_format($res['total'], 2, ',', '.') ?></strong></li>
-                    </ul>
-                </div>
-            <?php endforeach; ?>
-
-            <div class="firma">
-                Este documento es de carácter orientativo y no incluye costos menores referidos a los Tributos 231 (Inspecciones y demoliciones) y 233 (Derechos de Oficina).<br>
-                <?= date('d/m/Y') ?> — <?= htmlspecialchars($anio_valor_ut) ?>.
-            </div>
-        </div>
-    <?php endif; ?>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Exportador a PDF (cliente) -->
-    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 
     <script>
-        // --- Utilidades ---
+        // --- Utilidades de UI ---
         function limpiarFormulario() {
             window.location = window.location.pathname;
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
         function renumerarTitulos() {
             const cards = document.querySelectorAll('#secciones-container .seccion-card');
             cards.forEach((c, idx) => {
                 const h6 = c.querySelector('h6');
-                if (h6) h6.innerHTML = `<i class="bi bi-layers-fill text-success me-2"></i>Sección ${idx + 1}`;
+                const tituloInput = c.querySelector('input[name^="sections"][name$="[titulo]"]');
+                const display = (tituloInput && tituloInput.value.trim() !== '') ? tituloInput.value.trim() : `Sección ${idx + 1}`;
+                h6.innerHTML = `<i class="bi bi-layers-fill text-success me-2"></i>${escapeHtml(display)}`;
             });
         }
 
@@ -688,13 +434,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const cards = document.querySelectorAll('#secciones-container .seccion-card');
             const botones = document.querySelectorAll('#secciones-container .seccion-card button.btn-outline-danger');
             if (cards.length <= 1) {
+                // ocultar el eliminar en la única sección
                 if (botones[0]) botones[0].classList.add('d-none');
             } else {
                 botones.forEach(btn => btn.classList.remove('d-none'));
             }
         }
 
-        // --- Validaciones y estado ---
+        // --- Detección de estado de resultado / secciones válidas ---
         function hayResultadoMostrado() {
             return !!document.getElementById('bloque-resultado');
         }
@@ -707,14 +454,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return m2val && estval;
         }
 
-        function todasSeccionesValidas() {
-            const cards = document.querySelectorAll('#secciones-container .seccion-card');
-            if (cards.length === 0) return false;
-            return Array.from(cards).every(seccionEsValida);
+        function haySeccionValida() {
+            return Array.from(document.querySelectorAll('#secciones-container .seccion-card'))
+                .some(card => seccionEsValida(card));
         }
 
-        // --- Toast & highlight ---
+        // --- Toast de feedback ---
         function marcarAutoRecalc() {
+            // Flag para mostrar el toast después del POST/recarga
             sessionStorage.setItem('autoRecalc', '1');
         }
 
@@ -722,17 +469,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const toastEl = document.getElementById('autoToast');
             if (!toastEl) return;
             toastEl.querySelector('.toast-body').textContent = mensaje || 'Cálculo actualizado automáticamente';
-            new bootstrap.Toast(toastEl, {
+            const t = new bootstrap.Toast(toastEl, {
                 delay: 2000
-            }).show();
-        }
-
-        function resaltarResultado() {
-            const res = document.getElementById('bloque-resultado');
-            if (!res) return;
-            res.classList.remove('result-updated'); // reset
-            void res.offsetWidth; // reflow para reiniciar animación
-            res.classList.add('result-updated');
+            });
+            t.show();
         }
 
         // --- Submits automáticos ---
@@ -741,19 +481,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function autoSubmitDebounced() {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                // Submit solo si todas las secciones están válidas
-                if (!todasSeccionesValidas()) return;
                 const form = document.getElementById('calc-form');
                 if (form) {
                     marcarAutoRecalc();
-                    form.requestSubmit();
+                    form.requestSubmit(); // respeta validaciones cuando el usuario está completando
                 }
             }, 300);
         }
 
-        // Recalcular tras eliminar (pero solo si todas son válidas)
+        // Recalcula si ya había resultado
         function recomputarSiCorresponde() {
-            if (hayResultadoMostrado() && todasSeccionesValidas()) {
+            if (hayResultadoMostrado()) {
                 const form = document.getElementById('calc-form');
                 if (form) {
                     marcarAutoRecalc();
@@ -762,101 +500,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Recalcula al agregar sección: SI hay al menos una sección válida
+        // Se usa form.submit() para NO trabarse con "required" de la nueva sección vacía
+        function recomputarTrasAgregar() {
+            const form = document.getElementById('calc-form');
+            if (!form) return;
+            if (haySeccionValida()) {
+                marcarAutoRecalc();
+                form.submit(); // bypass de validaciones HTML5 (la nueva sección está vacía)
+            }
+        }
+
         function enlazarAutoCalculo(card) {
+            // Recalcular automáticamente cuando el usuario complete m²/estado en esa sección
             const inputs = card.querySelectorAll('input[name*="[m2]"], select[name*="[estado_id]"]');
             inputs.forEach(el => {
-                el.addEventListener('input', autoSubmitDebounced);
-                el.addEventListener('change', autoSubmitDebounced);
-                el.addEventListener('blur', autoSubmitDebounced);
+                el.addEventListener('change', () => {
+                    if (seccionEsValida(card)) autoSubmitDebounced();
+                    renumerarTitulos();
+                });
+                el.addEventListener('blur', () => {
+                    if (seccionEsValida(card)) autoSubmitDebounced();
+                });
+                el.addEventListener('input', () => {
+                    if (seccionEsValida(card)) autoSubmitDebounced();
+                });
             });
         }
 
-        // --- Acciones secciones ---
+        // --- Acciones sobre secciones ---
         function eliminarSeccion(btn) {
-            // 1) Cerrar/limpiar tooltip del botón que se va a borrar
-            try {
-                btn.blur(); // por si quedó en :focus
-                const inst = bootstrap.Tooltip.getInstance(btn) || bootstrap.Tooltip.getOrCreateInstance(btn);
-                inst.hide();
-                // borrar el tip inyectado (por animación puede tardar)
-                const tipId = btn.getAttribute('aria-describedby');
-                if (tipId) {
-                    const tipEl = document.getElementById(tipId);
-                    if (tipEl) tipEl.remove();
-                    btn.removeAttribute('aria-describedby');
-                }
-                inst.dispose();
-            } catch (e) {}
-
             const card = btn.closest('.seccion-card');
-            if (!card) return;
             const container = document.getElementById('secciones-container');
-
-            // Eliminar separador inmediatamente anterior, si existe
-            const prev = card.previousElementSibling;
-            if (prev && prev.classList && prev.classList.contains('seccion-divider')) {
-                prev.remove();
-            }
-
             card.remove();
 
-            const anyCard = container.querySelector('.seccion-card');
-            if (!anyCard) agregarSeccion();
+            // Si por algún motivo quedó 0 (no debería pasar porque ocultamos el botón en la última), dejamos 1 vacía
+            if (container.children.length === 0) {
+                agregarSeccion();
+            }
 
             renumerarTitulos();
             actualizarVisibilidadEliminar();
-            recomputarSiCorresponde();
+            recomputarSiCorresponde(); // recalcula total si ya había resultado
         }
-
 
         function agregarSeccion() {
             const container = document.getElementById('secciones-container');
 
-            // Próximo índice
+            // Calcular próximo índice
             const indices = Array.from(container.querySelectorAll('.seccion-card'))
                 .map(c => parseInt(c.getAttribute('data-index')))
                 .filter(n => !isNaN(n));
             const nextIndex = (indices.length ? Math.max(...indices) + 1 : 0);
 
-            // Si ya hay secciones, insertar separador visual
-            if (container.querySelector('.seccion-card')) {
-                const sep = document.createElement('div');
-                sep.className = 'seccion-divider';
-                sep.setAttribute('aria-hidden', 'true');
-                sep.innerHTML = `<span class="badge rounded-pill"><i class="bi bi-node-plus me-1"></i> Nueva sección</span>`;
-                container.appendChild(sep);
-            }
-
+            // Crear card
             const card = document.createElement('div');
             card.className = 'card seccion-card border-0';
             card.setAttribute('data-index', String(nextIndex));
 
-            // Campos apilados (sin título)
             card.innerHTML = `
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">
-                            <i class="bi bi-layers-fill text-success me-2"></i>
-                            Sección ${container.querySelectorAll('.seccion-card').length + 1}
-                        </h6>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="eliminarSeccion(this)" aria-label="Eliminar sección" data-bs-toggle="tooltip" data-bs-title="Eliminar sección">
-                            <i class="bi bi-trash3"></i>
-                        </button>
-                    </div>
-                    <div class="row g-2">
-                        <div class="col-12">
-                            <label class="form-label">Metros cuadrados (m²)</label>
-                            <input type="number" step="0.01" min="0" class="form-control" name="sections[${nextIndex}][m2]" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Estado de la obra</label>
-                            <select class="form-select" name="sections[${nextIndex}][estado_id]" required></select>
-                        </div>
-                    </div>
-                </div>
-            `;
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">
+            <i class="bi bi-layers-fill text-success me-2"></i>
+            Sección ${container.children.length + 1}
+          </h6>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarSeccion(this)">
+            <i class="bi bi-x-circle"></i> Eliminar
+          </button>
+        </div>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label">Nombre de la sección (opcional)</label>
+            <input type="text" class="form-control" name="sections[${nextIndex}][titulo]" placeholder="Ej.: Obra nueva, Balcones, etc.">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Metros cuadrados (m²)</label>
+            <input type="number" step="0.01" min="0" class="form-control" name="sections[${nextIndex}][m2]" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Estado de la obra</label>
+            <select class="form-select" name="sections[${nextIndex}][estado_id]" required></select>
+          </div>
+        </div>
+      </div>
+    `;
 
-            // Poblar select de estado
+            // Poblar opciones del select de estado (plantilla escondida en el DOM)
             const select = card.querySelector('select');
             select.innerHTML = document.getElementById('estadoOptions').innerHTML;
 
@@ -865,55 +595,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             enlazarAutoCalculo(card);
             actualizarVisibilidadEliminar();
 
-            // activar tooltips para el nuevo botón
-            const tt = new bootstrap.Tooltip(card.querySelector('[data-bs-toggle="tooltip"]'));
-
-            // Importante: NO recalculamos al agregar
-        }
-
-        // --- Exportar PDF ---
-        function descargarPDF() {
-            const tpl = document.getElementById('pdf-template');
-            if (!tpl) {
-                alert('No hay datos para exportar.');
-                return;
-            }
-            // Clonar y hacer visible fuera de pantalla para render limpio
-            const clone = tpl.cloneNode(true);
-            clone.id = 'pdf-clone';
-            clone.classList.remove('d-none');
-            clone.style.position = 'fixed';
-            clone.style.left = '-99999px';
-            clone.style.top = '0';
-            document.body.appendChild(clone);
-
-            const fecha = new Date().toISOString().slice(0, 10);
-            const opt = {
-                margin: [10, 10, 12, 10],
-                filename: `Calculadora_Derechos_${fecha}.pdf`,
-                image: {
-                    type: 'jpeg',
-                    quality: 0.98
-                },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true
-                },
-                jsPDF: {
-                    unit: 'mm',
-                    format: 'a4',
-                    orientation: 'portrait'
-                },
-                pagebreak: {
-                    mode: ['css', 'legacy']
-                }
-            };
-
-            html2pdf().from(clone).set(opt).save().then(() => {
-                document.body.removeChild(clone);
-            }).catch(() => {
-                document.body.removeChild(clone);
-            });
+            // Recalcular ahora (aunque la nueva esté vacía) si ya existe al menos una sección válida
+            recomputarTrasAgregar();
         }
 
         // --- Admin ---
@@ -952,19 +635,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // --- Boot ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Auto-cálculo en secciones renderizadas por servidor
-            document.querySelectorAll('#secciones-container .seccion-card').forEach(enlazarAutoCalculo);
+            // Enlazar auto-cálculo a todas las secciones renderizadas por el servidor
+            document.querySelectorAll('#secciones-container .seccion-card').forEach(card => {
+                enlazarAutoCalculo(card);
+            });
+
+            // Mantener encabezados sincronizados con los títulos
+            document.addEventListener('input', function(e) {
+                if (e.target.matches('input[name^="sections"][name$="[titulo]"]')) {
+                    renumerarTitulos();
+                }
+            });
+
+            // Ocultar "Eliminar" si solo hay una sección
             actualizarVisibilidadEliminar();
 
-            // tooltips iniciales
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
-
-            // Si venimos de recálculo automático, mostrar toast y animar resultado
+            // Mostrar toast si venimos de un recálculo automático
             if (sessionStorage.getItem('autoRecalc') === '1') {
                 sessionStorage.removeItem('autoRecalc');
                 mostrarToast('Cálculo actualizado automáticamente');
-                // animación
-                resaltarResultado();
             }
         });
     </script>
@@ -973,7 +662,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="position-fixed top-0 end-0 p-3" style="z-index:1080">
         <div id="autoToast" class="toast align-items-center text-bg-success border-0" role="status" aria-live="polite" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">Cálculo Total Actualizado</div>
+                <div class="toast-body">Cálculo actualizado automáticamente</div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>

@@ -3,26 +3,26 @@
         "id": 1,
         "min": 1,
         "max": 60,
-        "valor_m2": 50.03,
+        "valor_m2": 50,
         "detalle": "Prueba edit"
     },
     {
         "id": 2,
         "min": 61,
-        "max": 149,
+        "max": 120,
         "valor_m2": 100,
         "detalle": "UNIF Y LOCALES COMERC HASTA 120M2 - GALPONES"
     },
     {
         "id": 3,
-        "min": 150,
-        "max": 349,
+        "min": 121,
+        "max": 300,
         "valor_m2": 150,
         "detalle": "MULT HASTA 3 PLANTAS S\/ ASC - EST. DE SERVICIO - COCHERAS - COLEGIOS - CLUBES - LOCALES COMERC HASTA 300M2"
     },
     {
         "id": 4,
-        "min": 350,
+        "min": 301,
         "max": null,
         "valor_m2": 250,
         "detalle": "MAS DE 9 PLANTAS - BANCOS - CINES - SALUD - HOTEL"
